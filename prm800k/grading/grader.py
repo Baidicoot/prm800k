@@ -8,7 +8,7 @@ import sympy
 from pylatexenc import latex2text
 from sympy.parsing import sympy_parser
 
-from grading import math_normalize
+from . import math_normalize
 
 
 # sympy might hang -- we don't care about trying to be lenient in these cases
@@ -34,6 +34,11 @@ def _parse_latex(expr: str) -> str:
     expr = expr.replace("\\tfrac", "\\frac")
     expr = expr.replace("\\dfrac", "\\frac")
     expr = expr.replace("\\frac", " \\frac")  # Play nice with mixed numbers.
+
+    # Add implicit parentheses around curly brace contents to help with mixed numbers
+    expr = expr.replace("{", "{(")
+    expr = expr.replace("}", ")}")
+
     expr = latex2text.LatexNodes2Text().latex_to_text(expr)
 
     # Replace the specific characters that this parser uses.
@@ -244,12 +249,16 @@ def grade_answer(given_answer: str, ground_truth: str) -> bool:
     ground_truth_normalized_mathd = math_normalize.normalize_answer(ground_truth)
     given_answer_normalized_mathd = math_normalize.normalize_answer(given_answer)
 
+    print(ground_truth_normalized_mathd, given_answer_normalized_mathd)
+
     # be at least as lenient as mathd
     if ground_truth_normalized_mathd == given_answer_normalized_mathd:
         return True
 
     ground_truth_normalized = _normalize(ground_truth)
     given_normalized = _normalize(given_answer)
+
+    print(ground_truth_normalized, given_normalized)
 
     if ground_truth_normalized is None:
         return False
